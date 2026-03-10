@@ -15,6 +15,5 @@ Instructions for setting up the project locally...
 
 ## Team
 - Varsha (Lead Developer)
-- Aabha Dahale
 - [Other team members]
 </p>
