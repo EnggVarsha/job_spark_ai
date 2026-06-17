@@ -1,240 +1,322 @@
 import streamlit as st
+from datetime import datetime
 
-from services.jsearch_service import (
-    search_jobs
-)
+from services.jsearch_service import search_jobs
 
 from database.saved_jobs_db import (
-    save_job
+    save_job,
+    is_job_saved
 )
 
-from database.job_tracker_db import (
-    save_application
-)
+try:
+    from database.job_tracker_db import save_application
+except:
+    save_application = None
 
 
 def show_job_search():
 
     st.title("🔍 AI Job Search")
 
-    query = st.text_input(
-        "Search Jobs",
-        value="Python Developer in India"
-    )
+    # -----------------------------
+    # FILTERS
+    # -----------------------------
 
-    if st.button("Search Jobs"):
+    col_left, col_right = st.columns([4, 1])
 
-        jobs = search_jobs(query)
+    with col_right:
 
-        st.session_state.jobs = jobs
+        st.subheader("🎯 Filters")
 
-    if "jobs" not in st.session_state:
+        city = st.selectbox(
+            "City",
+            [
+                "India",
+                "Bangalore",
+                "Pune",
+                "Mumbai",
+                "Hyderabad",
+                "Delhi",
+                "Chennai",
+                "Kolkata",
+                "Remote"
+            ]
+        )
+
+        company_filter = st.text_input(
+            "Company Name"
+        )
+
+        job_type_filter = st.selectbox(
+            "Job Type",
+            [
+                "All",
+                "Full Time",
+                "Part Time",
+                "Contract",
+                "Internship"
+            ]
+        )
+
+        remote_filter = st.selectbox(
+            "Work Mode",
+            [
+                "Any",
+                "Remote",
+                "Onsite"
+            ]
+        )
+
+    # -----------------------------
+    # SEARCH AREA
+    # -----------------------------
+
+    with col_left:
+
+        query = st.text_input(
+            "Search Jobs",
+            placeholder="Java Developer"
+        )
+
+        if "search_results" not in st.session_state:
+            st.session_state.search_results = []
+
+        if st.button(
+            "🔍 Search Jobs",
+            use_container_width=True
+        ):
+
+            with st.spinner(
+                "Searching jobs..."
+            ):
+
+                st.session_state.search_results = search_jobs(
+                    query=query,
+                    location=city
+                )
+
+    jobs = st.session_state.search_results
+
+    # -----------------------------
+    # NO RESULTS
+    # -----------------------------
+
+    if not jobs:
+
+        st.info(
+            "Search jobs to view results."
+        )
 
         return
 
-    st.write(
-        "Jobs Found:",
-        len(st.session_state.jobs)
+    st.success(
+        f"{len(jobs)} jobs found"
     )
 
-    for index, job in enumerate(
-        st.session_state.jobs
-    ):
+    # -----------------------------
+    # JOB LIST
+    # -----------------------------
 
-        st.markdown("---")
+    for index, job in enumerate(jobs):
 
-        title = job.get(
-            "job_title",
-            "N/A"
+        title = str(
+            job.get(
+                "job_title",
+                "N/A"
+            )
         )
 
-        company = job.get(
-            "employer_name",
-            "N/A"
+        company = str(
+            job.get(
+                "employer_name",
+                "N/A"
+            )
         )
 
-        city = job.get(
-            "job_city",
-            ""
+        city_name = str(
+            job.get(
+                "job_city",
+                ""
+            )
         )
 
-        country = job.get(
-            "job_country",
-            ""
+        country = str(
+            job.get(
+                "job_country",
+                ""
+            )
         )
 
-        employment_type = job.get(
-            "job_employment_type",
-            "N/A"
+        location = f"{city_name}, {country}"
+
+        employment_type = str(
+            job.get(
+                "job_employment_type",
+                "N/A"
+            )
         )
 
-        remote = job.get(
+        is_remote = job.get(
             "job_is_remote",
             False
         )
 
-        description = job.get(
-            "job_description",
-            ""
+        description = str(
+            job.get(
+                "job_description",
+                ""
+            )
         )
 
-        apply_link = job.get(
-            "job_apply_link",
-            ""
+        job_url = str(
+            job.get(
+                "job_apply_link",
+                ""
+            )
         )
 
-        # -------------------
-        # JOB DETAILS
-        # -------------------
+        # -----------------------------
+        # FILTERS
+        # -----------------------------
 
-        st.subheader(title)
+        if company_filter:
 
-        st.write(
-            "🏢 Company:",
-            company
-        )
+            if company_filter.lower() not in company.lower():
+                continue
 
-        st.write(
-            "📍 Location:",
-            city,
-            country
-        )
+        if job_type_filter != "All":
 
-        st.write(
-            "💼 Employment Type:",
-            employment_type
-        )
+            if job_type_filter.lower().replace(" ", "") not in employment_type.lower().replace("_", "").replace(" ", ""):
+                continue
 
-        st.write(
-            "🌐 Remote:",
-            remote
-        )
+        if remote_filter == "Remote" and not is_remote:
+            continue
 
-        if description:
+        if remote_filter == "Onsite" and is_remote:
+            continue
 
-            with st.expander(
-                "📄 View Job Description"
-            ):
+        # -----------------------------
+        # JOB CARD
+        # -----------------------------
 
-                st.write(
-                    description
+        with st.container():
+
+            st.markdown("---")
+
+            st.subheader(title)
+
+            st.write(
+                f"🏢 Company: {company}"
+            )
+
+            st.write(
+                f"📍 Location: {location}"
+            )
+
+            st.write(
+                f"💼 Employment Type: {employment_type}"
+            )
+
+            st.write(
+                f"🌐 Remote: {'Yes' if is_remote else 'No'}"
+            )
+
+            if description:
+
+                with st.expander(
+                    "View Job Description"
+                ):
+
+                    st.write(
+                        description[:3000]
+                    )
+
+            c1, c2, c3 = st.columns(3)
+
+            # -----------------------------
+            # SAVE JOB
+            # -----------------------------
+
+            with c1:
+
+                if st.button(
+                    "💾 Save Job",
+                    key=f"save_{index}"
+                ):
+
+                    if is_job_saved(
+                        title,
+                        company
+                    ):
+
+                        st.warning(
+                            "Job already saved."
+                        )
+
+                    else:
+
+                        save_job(
+                            {
+                                "title": title,
+                                "company": company,
+                                "location": location,
+                                "job_url": job_url,
+                                "saved_date": datetime.now().strftime(
+                                    "%d-%m-%Y"
+                                )
+                            }
+                        )
+
+                        st.success(
+                            "Job saved successfully."
+                        )
+
+            # -----------------------------
+            # APPLY LINK
+            # -----------------------------
+
+            with c2:
+
+                if job_url:
+
+                    st.link_button(
+                        "🚀 Apply Job",
+                        job_url
+                    )
+
+            # -----------------------------
+            # TRACK APPLICATION
+            # -----------------------------
+
+            with c3:
+
+                applied = st.checkbox(
+                    "Applied",
+                    key=f"applied_{index}"
                 )
 
-        # -------------------
-        # BUTTONS
-        # -------------------
+                if applied and save_application:
 
-        col1, col2 = st.columns(2)
+                    if st.button(
+                        "✅ Confirm",
+                        key=f"confirm_{index}"
+                    ):
 
-        with col1:
+                        save_application(
+                            {
+                                "title": title,
+                                "company": company,
+                                "location": location,
+                                "job_url": job_url,
+                                "status": "Applied",
+                                "date": datetime.now().strftime(
+                                    "%d-%m-%Y"
+                                )
+                            }
+                        )
 
-            if st.button(
-                "💾 Save Job",
-                key=f"save_{index}"
-            ):
+                        st.success(
+                            "Application added."
+                        )
 
-                save_job(
-                    {
-                        "title": title,
-                        "company": company,
-                        "location": f"{city}, {country}",
-                        "apply_link": apply_link
-                    }
-                )
-
-                st.success(
-                    "Job Saved Successfully"
-                )
-
-        with col2:
-
-            if st.button(
-                "🚀 Apply Job",
-                key=f"apply_{index}"
-            ):
-
-                st.session_state[
-                    "selected_job"
-                ] = {
-
-                    "title": title,
-                    "company": company,
-                    "location": f"{city}, {country}",
-                    "apply_link": apply_link
-
-                }
-
-    # -------------------
-    # APPLY FLOW
-    # -------------------
-
-    if "selected_job" in st.session_state:
-
-        st.divider()
-
-        selected = st.session_state[
-            "selected_job"
-        ]
-
-        st.subheader(
-            "🚀 Job Application"
-        )
-
-        st.write(
-            f"**Job:** {selected['title']}"
-        )
-
-        st.write(
-            f"**Company:** {selected['company']}"
-        )
-
-        st.write(
-            "Have you applied?"
-        )
-
-        st.link_button(
-            "🌐 Open Official Application Page",
-            selected["apply_link"]
-        )
-
-        applied = st.radio(
-            "Application Status",
-            [
-                "Not Applied Yet",
-                "Applied Successfully"
-            ]
-        )
-
-        if st.button(
-            "Submit Application Status"
-        ):
-
-            if applied == "Applied Successfully":
-
-                save_application(
-                    {
-                        "title": selected[
-                            "title"
-                        ],
-                        "company": selected[
-                            "company"
-                        ],
-                        "status": "Applied"
-                    }
-                )
-
-                st.success(
-                    "Application Added Successfully"
-                )
-
-            else:
-
-                st.warning(
-                    "Application not submitted."
-                )
-
-            del st.session_state[
-                "selected_job"
-            ]
-
-            st.rerun()
+                        st.rerun()

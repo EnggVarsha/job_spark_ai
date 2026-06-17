@@ -1,7 +1,18 @@
+import os
 import requests
-from config.settings import RAPIDAPI_KEY
+import streamlit as st
+from dotenv import load_dotenv
 
-def search_jobs(query):
+load_dotenv()
+
+RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY")
+
+
+def search_jobs(
+    query,
+    location="India",
+    page=1
+):
 
     url = "https://jsearch.p.rapidapi.com/search"
 
@@ -11,20 +22,31 @@ def search_jobs(query):
     }
 
     params = {
-        "query": query,
-        "page": "1",
+        "query": f"{query} in {location}",
+        "page": str(page),
         "num_pages": "1"
     }
 
-    response = requests.get(
-        url,
-        headers=headers,
-        params=params,
-        timeout=20
-    )
+    try:
 
-    data = response.json()
+        response = requests.get(
+            url,
+            headers=headers,
+            params=params,
+            timeout=60
+        )
 
-    print("Returned Jobs:", len(data.get("data", [])))
+        response.raise_for_status()
 
-    return data.get("data", [])
+        return response.json().get(
+            "data",
+            []
+        )
+
+    except Exception as e:
+
+        st.error(
+            f"Error: {str(e)}"
+        )
+
+        return []

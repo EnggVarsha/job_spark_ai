@@ -1,15 +1,16 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
 
-from pages.dashboard import show_dashboard
 from pages.login import show_login
 from pages.register import show_register
-from pages.chatbot import show_chatbot
+
+from pages.dashboard import show_dashboard
 from pages.job_search import show_job_search
-from pages.resume_analyzer import show_resume_analyzer
-from pages.resume_builder import show_resume_builder
 from pages.profile import show_profile
 from pages.tracker import show_tracker
+from pages.chatbot import show_chatbot
+from pages.resume_builder import show_resume_builder
+from pages.resume_analyzer import show_resume_analyzer
 
 
 # ----------------------------------
@@ -30,10 +31,20 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
 # ----------------------------------
-# LOGIN / REGISTER
+# LOGIN / REGISTER SCREEN
 # ----------------------------------
 
 if not st.session_state.logged_in:
+
+    st.markdown(
+        """
+        # 🚀 JobSpark AI
+
+        ### Your AI Career Copilot
+
+        Find Jobs • Build Resume • Track Applications
+        """
+    )
 
     auth_choice = st.sidebar.radio(
         "Authentication",
@@ -48,75 +59,67 @@ if not st.session_state.logged_in:
     st.stop()
 
 # ----------------------------------
-# LIGHT THEME
+# PREMIUM LIGHT THEME
 # ----------------------------------
 
-st.markdown("""
-<style>
+st.markdown(
+    """
+    <style>
 
-/* Main App */
+    .stApp{
+        background: linear-gradient(
+            135deg,
+            #F8FAFC 0%,
+            #EEF2FF 100%
+        );
+        color:#111827;
+    }
 
-.stApp{
-    background-color:#FFFFFF;
-    color:#111827;
-}
+    [data-testid="stSidebar"]{
+        background:#FFFFFF;
+        border-right:1px solid #E5E7EB;
+    }
 
-/* Sidebar */
+    div[data-testid="metric-container"]{
+        background:white;
+        border-radius:20px;
+        padding:15px;
+        border:1px solid #E5E7EB;
+        box-shadow:0px 8px 20px rgba(0,0,0,0.05);
+    }
 
-[data-testid="stSidebar"]{
-    background-color:#F8FAFC;
-    border-right:1px solid #E5E7EB;
-}
+    .stButton > button{
+        background:#2563EB;
+        color:white;
+        border:none;
+        border-radius:10px;
+    }
 
-/* Metric Cards */
+    .stButton > button:hover{
+        background:#1D4ED8;
+        color:white;
+    }
 
-div[data-testid="metric-container"]{
-    background-color:#FFFFFF;
-    border:1px solid #E5E7EB;
-    border-radius:15px;
-    padding:15px;
-    box-shadow:0px 2px 8px rgba(0,0,0,0.05);
-}
+    .stTextInput input,
+    .stTextArea textarea{
+        background:white;
+        color:black;
+    }
 
-/* Buttons */
+    [data-testid="stFileUploader"]{
+        border:2px dashed #CBD5E1;
+        border-radius:15px;
+        padding:10px;
+    }
 
-.stButton > button{
-    background-color:#2563EB;
-    color:white;
-    border:none;
-    border-radius:10px;
-}
+    h1,h2,h3{
+        color:#111827;
+    }
 
-.stButton > button:hover{
-    background-color:#1D4ED8;
-    color:white;
-}
-
-/* Inputs */
-
-.stTextInput input,
-.stTextArea textarea{
-    background-color:#FFFFFF;
-    color:#111827;
-    border:1px solid #D1D5DB;
-}
-
-/* Upload */
-
-[data-testid="stFileUploader"]{
-    border:2px dashed #CBD5E1;
-    border-radius:12px;
-    padding:10px;
-}
-
-/* Headings */
-
-h1,h2,h3{
-    color:#111827;
-}
-
-</style>
-""", unsafe_allow_html=True)
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # ----------------------------------
 # SIDEBAR
@@ -124,25 +127,27 @@ h1,h2,h3{
 
 with st.sidebar:
 
+    st.image(
+        "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+        width=90
+    )
+
+    st.markdown("## 🚀 JobSpark AI")
+
     if "user" in st.session_state:
 
-        st.image(
-            "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
-            width=90
-        )
-
         st.markdown(
-            f"### {st.session_state.user.get('name','User')}"
+            f"### {st.session_state.user.get('name', 'User')}"
         )
 
         st.caption(
-            st.session_state.user.get('email','')
+            st.session_state.user.get('email', '')
         )
 
-        st.divider()
+    st.divider()
 
     selected = option_menu(
-        menu_title="🚀 JobSpark AI",
+        menu_title=None,
         options=[
             "Dashboard",
             "Profile",
@@ -166,7 +171,10 @@ with st.sidebar:
 
     st.divider()
 
-    if st.button("🚪 Logout"):
+    if st.button(
+        "🚪 Logout",
+        use_container_width=True
+    ):
 
         st.session_state.logged_in = False
 
@@ -206,3 +214,24 @@ elif selected == "Resume Analyzer":
 elif selected == "Application Tracker":
 
     show_tracker()
+
+# ----------------------------------
+# FOOTER
+# ----------------------------------
+
+st.divider()
+
+st.markdown(
+    """
+    <center>
+
+    <b>🚀 JobSpark AI</b><br>
+
+    Your AI Career Copilot<br><br>
+
+    Designed by Varsha Samal • 2026
+
+    </center>
+    """,
+    unsafe_allow_html=True
+)
